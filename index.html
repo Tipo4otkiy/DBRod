@@ -3,217 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Бджоляр CRM - Родословные</title>
+    <title>Бджоляр CRM - Интерактивная Родословная</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
+        :root {
+            --bg-color: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-yellow: #eab308;
+            --border-color: #e2e8f0;
+        }
+
         * { box-sizing: border-box; }
         body { 
-            background-color: #f5f5f5; 
-            font-family: 'Segoe UI', Tahoma, sans-serif; 
             margin: 0; 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            background-color: var(--bg-color);
+            color: var(--text-main);
             display: flex;
             height: 100vh;
             overflow: hidden;
         }
 
-        /* Боковая панель с поиском */
         .sidebar {
-            width: 350px;
-            background-color: #fff;
-            border-right: 1px solid #ddd;
+            width: 380px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
-            z-index: 10;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.03);
+            z-index: 100;
         }
 
-        .search-box {
-            padding: 20px;
-            border-bottom: 1px solid #eee;
-            background: #fafafa;
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .search-box input {
+        .sidebar-header h1 {
+            font-size: 20px;
+            margin: 0 0 16px 0;
+            color: var(--accent-blue);
+        }
+
+        .controls-row {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #searchInput, #sortSelect {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            background-color: white;
         }
+
+        #searchInput:focus { border-color: var(--accent-blue); }
 
         .results-list {
             flex: 1;
             overflow-y: auto;
-            list-style: none;
             margin: 0;
             padding: 0;
+            list-style: none;
         }
 
-        .results-list li {
-            padding: 15px 20px;
-            border-bottom: 1px solid #eee;
+        .queen-item {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
 
-        .results-list li:hover { background-color: #f0f7ff; }
-        .results-list li.active { background-color: #e0f0ff; border-left: 4px solid #3b82f6; }
-        .result-title { font-weight: bold; font-size: 15px; color: #333; }
-        .result-subtitle { font-size: 13px; color: #777; margin-top: 4px; }
+        .queen-item:hover { background-color: #f1f5f9; }
+        .queen-item.active { background-color: #eff6ff; border-left: 4px solid var(--accent-blue); }
+        .queen-line { font-weight: 700; font-size: 15px; }
+        .queen-meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
-        /* Основная зона (где рисуется дерево) */
-        .main-content {
+        .viewport {
             flex: 1;
-            padding: 40px;
-            overflow: auto;
             position: relative;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 30px 30px;
         }
 
-        /* --- Стили Дерева (из прошлого примера) --- */
-        .tree { display: flex; align-items: center; min-width: max-content; }
-        .tree ul { display: flex; flex-direction: column; gap: 15px; padding-left: 40px; position: relative; margin: 0; list-style: none; justify-content: center; }
-        .tree ul::before { content: ''; position: absolute; top: 35px; bottom: 35px; left: 0; border-left: 2px solid #ccc; z-index: 1; }
-        .tree li { display: flex; align-items: center; position: relative; }
-        .tree li::before { content: ''; position: absolute; left: -40px; width: 40px; border-top: 2px solid #ccc; z-index: 1; }
-        .has-children::after { content: ''; position: absolute; right: -40px; top: 50%; width: 40px; border-top: 2px solid #ccc; z-index: 1; }
-        .root > li::before { display: none; }
-        .root { padding-left: 0; }
-        .root::before { display: none; }
+        #tree-canvas { width: 100%; height: 100%; cursor: grab; }
+        #tree-canvas:active { cursor: grabbing; }
 
-        .card { 
-            background-color: #ffffff; border-radius: 4px; padding: 10px 15px; 
-            min-width: 150px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
-            border-top: 4px solid #ccc; border-left: 1px solid #eee; 
-            border-right: 1px solid #eee; border-bottom: 1px solid #eee;
-            position: relative; z-index: 2; 
-        }
-        .card.buckfast { border-top-color: #eab308; }
-        .card.italian { border-top-color: #3b82f6; }
-        .card-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 5px; }
-        .card-info { font-size: 13px; color: #ef4444; line-height: 1.5; }
-        
-        /* Заглушка, если ничего не выбрано */
-        .placeholder-text {
-            color: #aaa;
-            font-size: 20px;
-            text-align: center;
-            margin-top: 20%;
+        .node rect { fill: white; stroke: #e2e8f0; stroke-width: 1px; rx: 6; ry: 6; }
+        .node-title { font-weight: bold; font-size: 13px; fill: #1e293b; }
+        .node-info { font-size: 11px; fill: #ef4444; }
+        .node-breed { font-size: 10px; fill: #64748b; }
+        .link { fill: none; stroke: #94a3b8; stroke-width: 1.5px; }
+        .breed-strip { height: 4px; }
+        .strip-buckfast { fill: var(--accent-yellow); }
+        .strip-italian { fill: var(--accent-blue); }
+
+        .tooltip {
+            position: absolute;
+            padding: 8px 12px;
+            background: rgba(15, 23, 42, 0.9);
+            color: white;
+            border-radius: 6px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
         }
     </style>
 </head>
 <body>
 
-    <script src="database.js"></script>
+    <div id="tooltip" class="tooltip"></div>
 
     <div class="sidebar">
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Поиск по номеру, линии или заводчику..." onkeyup="filterQueens()">
+        <div class="sidebar-header">
+            <h1>Бджоляр CRM</h1>
+            <div class="controls-row">
+                <input type="text" id="searchInput" placeholder="Поиск по линии или метке..." oninput="filterQueens()">
+                <select id="sortSelect" onchange="filterQueens()">
+                    <option value="none">Без сортировки</option>
+                    <option value="yearDesc">Год: по убыванию (новые выше)</option>
+                    <option value="yearAsc">Год: по возрастанию (старые выше)</option>
+                </select>
+            </div>
         </div>
-        <ul class="results-list" id="resultsList">
-            </ul>
+        <ul class="results-list" id="resultsList"></ul>
     </div>
 
-    <div class="main-content" id="treeContainer">
-        <div class="placeholder-text">⬅ Введите номер или линию в поиск и выберите матку из списка</div>
+    <div class="viewport">
+        <svg id="tree-canvas"></svg>
     </div>
+
+    <script src="database.js"></script>
 
     <script>
-        // Функция фильтрации списка
+        const svg = d3.select("#tree-canvas");
+        const g = svg.append("g");
+        const tooltip = d3.select("#tooltip");
+
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 3])
+            .on("zoom", (event) => g.attr("transform", event.transform));
+        
+        svg.call(zoom);
+
         function filterQueens() {
             const query = document.getElementById('searchInput').value.toLowerCase();
+            const sortMode = document.getElementById('sortSelect').value;
             const list = document.getElementById('resultsList');
             list.innerHTML = '';
 
-            // Перебираем всю базу, которую мы подключили из database.js
-            const filtered = queensDatabase.filter(data => {
-                const q = data.queen || {};
-                const searchableText = `${q.line} ${q.displayName} ${q.markNumber} ${q.breederAbbr}`.toLowerCase();
-                return searchableText.includes(query);
+            // 1. Фильтрация
+            let filtered = queensDatabase.filter(d => {
+                const q = d.queen || {};
+                return `${q.line} ${q.markNumber} ${q.breederAbbr}`.toLowerCase().includes(query);
             });
 
-            // Рендерим отфильтрованный список
-            filtered.slice(0, 50).forEach(data => { // показываем до 50 результатов для скорости
+            // 2. Сортировка
+            if (sortMode === 'yearAsc') {
+                filtered.sort((a, b) => new Date(a.queen.birthday) - new Date(b.queen.birthday));
+            } else if (sortMode === 'yearDesc') {
+                filtered.sort((a, b) => new Date(b.queen.birthday) - new Date(a.queen.birthday));
+            }
+
+            // 3. Отрисовка списка
+            filtered.forEach(data => {
                 const q = data.queen || {};
                 const li = document.createElement('li');
-                
-                let mark = q.markNumber ? ` (Метка: ${q.markNumber})` : '';
+                li.className = 'queen-item';
                 li.innerHTML = `
-                    <div class="result-title">${q.line} - ${q.breederAbbr} ${mark}</div>
-                    <div class="result-subtitle">${q.breedName} | Год: ${new Date(q.birthday).getFullYear() || ''}</div>
+                    <div class="queen-line">${q.line} (${q.breederAbbr})</div>
+                    <div class="queen-meta">${q.breedName} • Метка: ${q.markNumber || '—'} • ${new Date(q.birthday).getFullYear()}</div>
                 `;
-                
                 li.onclick = () => {
-                    // Убираем выделение у всех, ставим текущему
-                    document.querySelectorAll('.results-list li').forEach(el => el.classList.remove('active'));
+                    document.querySelectorAll('.queen-item').forEach(el => el.classList.remove('active'));
                     li.classList.add('active');
-                    
-                    // Рисуем дерево выбранной матки
-                    renderTree(data.pedigreeTree);
+                    drawTree(data.pedigreeTree);
                 };
                 list.appendChild(li);
             });
         }
 
-        // Рекурсивная функция для построения дерева
-        function buildNodeHTML(node) {
-            if (!node || node.id === "00000000-0000-0000-0000-000000000000") {
-                return `<li><div style='padding: 10px; color: #888;'>Невідомо</div></li>`;
-            }
+        function drawTree(rootData) {
+            g.selectAll("*").remove();
 
-            let line = node.line || 'Невідомо';
-            let year = node.year || '';
-            let breeder = node.breederAbbr || node.breader || '';
-            let insText = node.inseminationText || 'Невідомо';
-            let breed = (node.breed || '').toLowerCase();
+            const hierarchy = d3.hierarchy(rootData, d => {
+                const children = [];
+                if (d.mother) children.push(d.mother);
+                if (d.dronesMother) children.push(d.dronesMother);
+                return children;
+            });
 
-            if (line === "Невідомо" && !year && !breeder) {
-                return `<li><div style='padding: 10px; color: #888;'>Невідомо</div></li>`;
-            }
+            const nodeWidth = 180;
+            const nodeHeight = 60;
+            const treeLayout = d3.tree().nodeSize([nodeHeight + 40, nodeWidth + 100]);
+            
+            treeLayout(hierarchy);
 
-            // Классы породы для цветной полоски
-            let breedClass = "";
-            if (breed.includes("buckfast")) breedClass = "buckfast";
-            if (breed.includes("italian")) breedClass = "italian";
+            g.selectAll(".link")
+                .data(hierarchy.links())
+                .enter()
+                .append("path")
+                .attr("class", "link")
+                .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x));
 
-            // Собираем название (B528.26 (BPS))
-            let title = line;
-            if (year) title += `.${year}`;
-            if (breeder) title += ` (${breeder})`;
+            const node = g.selectAll(".node")
+                .data(hierarchy.descendants())
+                .enter()
+                .append("g")
+                .attr("class", "node")
+                .attr("transform", d => `translate(${d.y},${d.x - nodeHeight/2})`)
+                .on("mouseover", (event, d) => {
+                    tooltip.style("display", "block")
+                           .html(`<b>${d.data.line}</b><br>${d.data.inseminationText || 'Нет данных'}`);
+                })
+                .on("mousemove", (event) => {
+                    tooltip.style("left", (event.pageX + 10) + "px")
+                           .style("top", (event.pageY - 10) + "px");
+                })
+                .on("mouseout", () => tooltip.style("display", "none"));
 
-            // РЕКУРСИЯ: Идем в мать и трутней
-            let motherHTML = node.mother ? buildNodeHTML(node.mother) : "";
-            let dronesHTML = node.dronesMother ? buildNodeHTML(node.dronesMother) : "";
+            node.append("rect").attr("width", nodeWidth).attr("height", nodeHeight);
 
-            let childrenHTML = "";
-            let hasChildrenClass = "";
-            if (motherHTML || dronesHTML) {
-                hasChildrenClass = "has-children";
-                childrenHTML = `<ul>${motherHTML}${dronesHTML}</ul>`;
-            }
+            node.append("rect")
+                .attr("width", nodeWidth)
+                .attr("height", 4)
+                .attr("class", d => {
+                    const b = (d.data.breed || "").toLowerCase();
+                    if (b.includes("buckfast")) return "strip-buckfast";
+                    if (b.includes("italian")) return "strip-italian";
+                    return "";
+                });
 
-            return `
-            <li>
-                <div class="card ${breedClass} ${hasChildrenClass}">
-                    <div class="card-title">${title}</div>
-                    <div class="card-info">${insText}</div>
-                </div>
-                ${childrenHTML}
-            </li>`;
+            node.append("text").attr("class", "node-title").attr("x", 10).attr("y", 25)
+                .text(d => `${d.data.line || 'Неизв.'}.${d.data.year || ''} (${d.data.breederAbbr || d.data.breader || ''})`);
+
+            node.append("text").attr("class", "node-info").attr("x", 10).attr("y", 42)
+                .text(d => (d.data.inseminationText || "").substring(0, 25));
+
+            node.append("text").attr("class", "node-breed").attr("x", 10).attr("y", 54)
+                .text(d => d.data.breed || "");
+
+            svg.call(zoom.transform, d3.zoomIdentity.translate(100, 300).scale(0.8));
         }
 
-        // Запуск рендеринга
-        function renderTree(pedigreeTree) {
-            const container = document.getElementById('treeContainer');
-            const treeHTML = buildNodeHTML(pedigreeTree);
-            container.innerHTML = `
-                <div class="tree">
-                    <ul class="root">
-                        ${treeHTML}
-                    </ul>
-                </div>
-            `;
-        }
-
-        // При первом запуске отрисуем весь список маток в левой панели
         window.onload = filterQueens;
     </script>
 </body>
