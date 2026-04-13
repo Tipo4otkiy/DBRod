@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бджоляр CRM - Родословные</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            background-color: #f5f5f5; 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+            margin: 0; 
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Боковая панель с поиском */
+        .sidebar {
+            width: 350px;
+            background-color: #fff;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+        .search-box {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            background: #fafafa;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .results-list {
+            flex: 1;
+            overflow-y: auto;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .results-list li {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .results-list li:hover { background-color: #f0f7ff; }
+        .results-list li.active { background-color: #e0f0ff; border-left: 4px solid #3b82f6; }
+        .result-title { font-weight: bold; font-size: 15px; color: #333; }
+        .result-subtitle { font-size: 13px; color: #777; margin-top: 4px; }
+
+        /* Основная зона (где рисуется дерево) */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow: auto;
+            position: relative;
+        }
+
+        /* --- Стили Дерева (из прошлого примера) --- */
+        .tree { display: flex; align-items: center; min-width: max-content; }
+        .tree ul { display: flex; flex-direction: column; gap: 15px; padding-left: 40px; position: relative; margin: 0; list-style: none; justify-content: center; }
+        .tree ul::before { content: ''; position: absolute; top: 35px; bottom: 35px; left: 0; border-left: 2px solid #ccc; z-index: 1; }
+        .tree li { display: flex; align-items: center; position: relative; }
+        .tree li::before { content: ''; position: absolute; left: -40px; width: 40px; border-top: 2px solid #ccc; z-index: 1; }
+        .has-children::after { content: ''; position: absolute; right: -40px; top: 50%; width: 40px; border-top: 2px solid #ccc; z-index: 1; }
+        .root > li::before { display: none; }
+        .root { padding-left: 0; }
+        .root::before { display: none; }
+
+        .card { 
+            background-color: #ffffff; border-radius: 4px; padding: 10px 15px; 
+            min-width: 150px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+            border-top: 4px solid #ccc; border-left: 1px solid #eee; 
+            border-right: 1px solid #eee; border-bottom: 1px solid #eee;
+            position: relative; z-index: 2; 
+        }
+        .card.buckfast { border-top-color: #eab308; }
+        .card.italian { border-top-color: #3b82f6; }
+        .card-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 5px; }
+        .card-info { font-size: 13px; color: #ef4444; line-height: 1.5; }
+        
+        /* Заглушка, если ничего не выбрано */
+        .placeholder-text {
+            color: #aaa;
+            font-size: 20px;
+            text-align: center;
+            margin-top: 20%;
+        }
+    </style>
+</head>
+<body>
+
+    <script src="database.js"></script>
+
+    <div class="sidebar">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Поиск по номеру, линии или заводчику..." onkeyup="filterQueens()">
+        </div>
+        <ul class="results-list" id="resultsList">
+            </ul>
+    </div>
+
+    <div class="main-content" id="treeContainer">
+        <div class="placeholder-text">⬅ Введите номер или линию в поиск и выберите матку из списка</div>
+    </div>
+
+    <script>
+        // Функция фильтрации списка
+        function filterQueens() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const list = document.getElementById('resultsList');
+            list.innerHTML = '';
+
+            // Перебираем всю базу, которую мы подключили из database.js
+            const filtered = queensDatabase.filter(data => {
+                const q = data.queen || {};
+                const searchableText = `${q.line} ${q.displayName} ${q.markNumber} ${q.breederAbbr}`.toLowerCase();
+                return searchableText.includes(query);
+            });
+
+            // Рендерим отфильтрованный список
+            filtered.slice(0, 50).forEach(data => { // показываем до 50 результатов для скорости
+                const q = data.queen || {};
+                const li = document.createElement('li');
+                
+                let mark = q.markNumber ? ` (Метка: ${q.markNumber})` : '';
+                li.innerHTML = `
+                    <div class="result-title">${q.line} - ${q.breederAbbr} ${mark}</div>
+                    <div class="result-subtitle">${q.breedName} | Год: ${new Date(q.birthday).getFullYear() || ''}</div>
+                `;
+                
+                li.onclick = () => {
+                    // Убираем выделение у всех, ставим текущему
+                    document.querySelectorAll('.results-list li').forEach(el => el.classList.remove('active'));
+                    li.classList.add('active');
+                    
+                    // Рисуем дерево выбранной матки
+                    renderTree(data.pedigreeTree);
+                };
+                list.appendChild(li);
+            });
+        }
+
+        // Рекурсивная функция для построения дерева
+        function buildNodeHTML(node) {
+            if (!node || node.id === "00000000-0000-0000-0000-000000000000") {
+                return `<li><div style='padding: 10px; color: #888;'>Невідомо</div></li>`;
+            }
+
+            let line = node.line || 'Невідомо';
+            let year = node.year || '';
+            let breeder = node.breederAbbr || node.breader || '';
+            let insText = node.inseminationText || 'Невідомо';
+            let breed = (node.breed || '').toLowerCase();
+
+            if (line === "Невідомо" && !year && !breeder) {
+                return `<li><div style='padding: 10px; color: #888;'>Невідомо</div></li>`;
+            }
+
+            // Классы породы для цветной полоски
+            let breedClass = "";
+            if (breed.includes("buckfast")) breedClass = "buckfast";
+            if (breed.includes("italian")) breedClass = "italian";
+
+            // Собираем название (B528.26 (BPS))
+            let title = line;
+            if (year) title += `.${year}`;
+            if (breeder) title += ` (${breeder})`;
+
+            // РЕКУРСИЯ: Идем в мать и трутней
+            let motherHTML = node.mother ? buildNodeHTML(node.mother) : "";
+            let dronesHTML = node.dronesMother ? buildNodeHTML(node.dronesMother) : "";
+
+            let childrenHTML = "";
+            let hasChildrenClass = "";
+            if (motherHTML || dronesHTML) {
+                hasChildrenClass = "has-children";
+                childrenHTML = `<ul>${motherHTML}${dronesHTML}</ul>`;
+            }
+
+            return `
+            <li>
+                <div class="card ${breedClass} ${hasChildrenClass}">
+                    <div class="card-title">${title}</div>
+                    <div class="card-info">${insText}</div>
+                </div>
+                ${childrenHTML}
+            </li>`;
+        }
+
+        // Запуск рендеринга
+        function renderTree(pedigreeTree) {
+            const container = document.getElementById('treeContainer');
+            const treeHTML = buildNodeHTML(pedigreeTree);
+            container.innerHTML = `
+                <div class="tree">
+                    <ul class="root">
+                        ${treeHTML}
+                    </ul>
+                </div>
+            `;
+        }
+
+        // При первом запуске отрисуем весь список маток в левой панели
+        window.onload = filterQueens;
+    </script>
+</body>
+</html>
