@@ -3,23 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Бджоляр CRM - Интерактивная Родословная</title>
+    <title>Ownerka CRM - Родословные</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         :root {
-            --bg-color: #f8fafc;
+            --bg-color: #f4f4f4;
             --sidebar-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
+            --text-main: #111;
+            --text-muted: #666;
             --accent-blue: #3b82f6;
-            --accent-yellow: #eab308;
-            --border-color: #e2e8f0;
+            --border-color: #ddd;
         }
 
         * { box-sizing: border-box; }
         body { 
             margin: 0; 
-            font-family: 'Inter', -apple-system, sans-serif; 
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif; 
             background-color: var(--bg-color);
             color: var(--text-main);
             display: flex;
@@ -27,25 +26,27 @@
             overflow: hidden;
         }
 
+        /* --- Стили интерфейса --- */
         .sidebar {
-            width: 380px;
+            width: 350px;
             background: var(--sidebar-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            box-shadow: 4px 0 15px rgba(0,0,0,0.03);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             z-index: 100;
         }
 
         .sidebar-header {
-            padding: 24px;
+            padding: 20px;
             border-bottom: 1px solid var(--border-color);
         }
 
         .sidebar-header h1 {
             font-size: 20px;
-            margin: 0 0 16px 0;
-            color: var(--accent-blue);
+            margin: 0 0 15px 0;
+            color: #000;
+            letter-spacing: -0.5px;
         }
 
         .controls-row {
@@ -56,15 +57,29 @@
 
         #searchInput, #sortSelect {
             width: 100%;
-            padding: 12px 16px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
+            padding: 10px 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
             font-size: 14px;
             outline: none;
-            background-color: white;
         }
 
-        #searchInput:focus { border-color: var(--accent-blue); }
+        .print-btn {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .print-btn:hover { background-color: #059669; }
 
         .results-list {
             flex: 1;
@@ -75,63 +90,76 @@
         }
 
         .queen-item {
-            padding: 16px 24px;
-            border-bottom: 1px solid var(--border-color);
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
             cursor: pointer;
-            transition: all 0.2s;
         }
 
-        .queen-item:hover { background-color: #f1f5f9; }
-        .queen-item.active { background-color: #eff6ff; border-left: 4px solid var(--accent-blue); }
-        .queen-line { font-weight: 700; font-size: 15px; }
+        .queen-item:hover { background-color: #f9f9f9; }
+        .queen-item.active { background-color: #e6f0ff; border-left: 4px solid var(--accent-blue); }
+        .queen-line { font-weight: 600; font-size: 14px; }
         .queen-meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
         .viewport {
             flex: 1;
             position: relative;
-            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-            background-size: 30px 30px;
+            background-color: #ffffff;
         }
 
         #tree-canvas { width: 100%; height: 100%; cursor: grab; }
-        #tree-canvas:active { cursor: grabbing; }
 
-        .node rect { fill: white; stroke: #e2e8f0; stroke-width: 1px; rx: 6; ry: 6; }
-        .node-title { font-weight: bold; font-size: 13px; fill: #1e293b; }
-        .node-info { font-size: 11px; fill: #ef4444; }
-        .node-breed { font-size: 10px; fill: #64748b; }
-        .link { fill: none; stroke: #94a3b8; stroke-width: 1.5px; }
-        .breed-strip { height: 4px; }
-        .strip-buckfast { fill: var(--accent-yellow); }
-        .strip-italian { fill: var(--accent-blue); }
+        /* Стили дерева (Экран) */
+        .node-text { font-size: 15px; font-weight: 600; fill: #111; font-family: 'Segoe UI', sans-serif; }
+        .insemination-text { font-size: 13px; fill: #d93025; font-family: 'Segoe UI', sans-serif; }
+        .link { fill: none; stroke: #888; stroke-width: 1.5px; }
 
-        .tooltip {
-            position: absolute;
-            padding: 8px 12px;
-            background: rgba(15, 23, 42, 0.9);
-            color: white;
-            border-radius: 6px;
-            font-size: 12px;
-            pointer-events: none;
-            z-index: 1000;
-            display: none;
+        /* --- Стили для печати (Книжная) --- */
+        #print-area { display: none; }
+
+        @media print {
+            body { height: auto; overflow: visible; display: block; background: white; }
+            .sidebar, .viewport { display: none !important; }
+            #print-area { display: block !important; }
+            
+            /* Книжная ориентация с минимальными полями */
+            @page { size: A4 portrait; margin: 10mm; }
+
+            .print-page {
+                page-break-after: always;
+                page-break-inside: avoid;
+                width: 100%;
+                height: 275mm;
+                position: relative;
+            }
+
+            .print-header {
+                border-bottom: 2px solid #000;
+                padding-bottom: 8px;
+                margin-bottom: 10px;
+                font-size: 18px;
+                font-weight: bold;
+                font-family: 'Segoe UI', sans-serif;
+            }
+
+            /* Крупные шрифты для PDF */
+            .node-text { font-size: 14px !important; font-weight: 700 !important; }
+            .insemination-text { font-size: 12px !important; fill: #000 !important; } 
         }
     </style>
 </head>
 <body>
 
-    <div id="tooltip" class="tooltip"></div>
-
     <div class="sidebar">
         <div class="sidebar-header">
-            <h1>Бджоляр CRM</h1>
+            <h1>Ownerka CRM</h1>
             <div class="controls-row">
-                <input type="text" id="searchInput" placeholder="Поиск по линии или метке..." oninput="filterQueens()">
+                <input type="text" id="searchInput" placeholder="Поиск линии..." oninput="filterQueens()">
                 <select id="sortSelect" onchange="filterQueens()">
                     <option value="none">Без сортировки</option>
-                    <option value="yearDesc">Год: по убыванию (новые выше)</option>
-                    <option value="yearAsc">Год: по возрастанию (старые выше)</option>
+                    <option value="yearDesc">Новые сверху (Год ↓)</option>
+                    <option value="yearAsc">Старые сверху (Год ↑)</option>
                 </select>
+                <button class="print-btn" onclick="generatePdfAll()">🖨️ Распечатать список</button>
             </div>
         </div>
         <ul class="results-list" id="resultsList"></ul>
@@ -141,15 +169,16 @@
         <svg id="tree-canvas"></svg>
     </div>
 
+    <div id="print-area"></div>
+
     <script src="database.js"></script>
 
     <script>
         const svg = d3.select("#tree-canvas");
         const g = svg.append("g");
-        const tooltip = d3.select("#tooltip");
 
         const zoom = d3.zoom()
-            .scaleExtent([0.1, 3])
+            .scaleExtent([0.1, 4])
             .on("zoom", (event) => g.attr("transform", event.transform));
         
         svg.call(zoom);
@@ -160,20 +189,17 @@
             const list = document.getElementById('resultsList');
             list.innerHTML = '';
 
-            // 1. Фильтрация
             let filtered = queensDatabase.filter(d => {
                 const q = d.queen || {};
                 return `${q.line} ${q.markNumber} ${q.breederAbbr}`.toLowerCase().includes(query);
             });
 
-            // 2. Сортировка
             if (sortMode === 'yearAsc') {
                 filtered.sort((a, b) => new Date(a.queen.birthday) - new Date(b.queen.birthday));
             } else if (sortMode === 'yearDesc') {
                 filtered.sort((a, b) => new Date(b.queen.birthday) - new Date(a.queen.birthday));
             }
 
-            // 3. Отрисовка списка
             filtered.forEach(data => {
                 const q = data.queen || {};
                 const li = document.createElement('li');
@@ -185,14 +211,18 @@
                 li.onclick = () => {
                     document.querySelectorAll('.queen-item').forEach(el => el.classList.remove('active'));
                     li.classList.add('active');
-                    drawTree(data.pedigreeTree);
+                    
+                    drawTree(data.pedigreeTree, g, [50, 240]);
+                    
+                    const parent = svg.node().getBoundingClientRect();
+                    svg.call(zoom.transform, d3.zoomIdentity.translate(80, parent.height / 2).scale(0.85));
                 };
                 list.appendChild(li);
             });
         }
 
-        function drawTree(rootData) {
-            g.selectAll("*").remove();
+        function drawTree(rootData, svgGroup, nodeSizes) {
+            svgGroup.selectAll("*").remove();
 
             const hierarchy = d3.hierarchy(rootData, d => {
                 const children = [];
@@ -201,57 +231,127 @@
                 return children;
             });
 
-            const nodeWidth = 180;
-            const nodeHeight = 60;
-            const treeLayout = d3.tree().nodeSize([nodeHeight + 40, nodeWidth + 100]);
-            
+            const treeLayout = d3.tree().nodeSize(nodeSizes);
             treeLayout(hierarchy);
 
-            g.selectAll(".link")
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+
+            hierarchy.descendants().forEach(d => {
+                if (d.x < minX) minX = d.x;
+                if (d.x > maxX) maxX = d.x;
+                if (d.y < minY) minY = d.y;
+                if (d.y > maxY) maxY = d.y;
+            });
+
+            svgGroup.selectAll(".link")
                 .data(hierarchy.links())
                 .enter()
                 .append("path")
                 .attr("class", "link")
-                .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x));
+                .attr("d", d => {
+                    const turnX = d.source.y + (nodeSizes[1] * 0.85); 
+                    return `M ${d.source.y},${d.source.x} H ${turnX} V ${d.target.x} H ${d.target.y}`;
+                });
 
-            const node = g.selectAll(".node")
+            const node = svgGroup.selectAll(".node")
                 .data(hierarchy.descendants())
                 .enter()
                 .append("g")
                 .attr("class", "node")
-                .attr("transform", d => `translate(${d.y},${d.x - nodeHeight/2})`)
-                .on("mouseover", (event, d) => {
-                    tooltip.style("display", "block")
-                           .html(`<b>${d.data.line}</b><br>${d.data.inseminationText || 'Нет данных'}`);
-                })
-                .on("mousemove", (event) => {
-                    tooltip.style("left", (event.pageX + 10) + "px")
-                           .style("top", (event.pageY - 10) + "px");
-                })
-                .on("mouseout", () => tooltip.style("display", "none"));
+                .attr("transform", d => `translate(${d.y},${d.x})`);
 
-            node.append("rect").attr("width", nodeWidth).attr("height", nodeHeight);
-
-            node.append("rect")
-                .attr("width", nodeWidth)
-                .attr("height", 4)
-                .attr("class", d => {
-                    const b = (d.data.breed || "").toLowerCase();
-                    if (b.includes("buckfast")) return "strip-buckfast";
-                    if (b.includes("italian")) return "strip-italian";
-                    return "";
+            node.append("text")
+                .attr("class", "node-text")
+                .attr("dy", "-0.25em")
+                .attr("x", 4)
+                .text(d => {
+                    if (d.data.id === "00000000-0000-0000-0000-000000000000" || !d.data.line || d.data.line === "Невідомо") return "Невідомо";
+                    let yearStr = d.data.year ? `.${d.data.year}` : "";
+                    let breederStr = (d.data.breederAbbr || d.data.breader) ? ` (${d.data.breederAbbr || d.data.breader})` : "";
+                    return `${d.data.line}${yearStr}${breederStr}`;
                 });
 
-            node.append("text").attr("class", "node-title").attr("x", 10).attr("y", 25)
-                .text(d => `${d.data.line || 'Неизв.'}.${d.data.year || ''} (${d.data.breederAbbr || d.data.breader || ''})`);
+            node.append("text")
+                .attr("class", "insemination-text")
+                .attr("dy", "1.1em")
+                .attr("x", 4) 
+                .text(d => ((d.data.mother || d.data.dronesMother) && d.data.inseminationText) ? d.data.inseminationText : "");
 
-            node.append("text").attr("class", "node-info").attr("x", 10).attr("y", 42)
-                .text(d => (d.data.inseminationText || "").substring(0, 25));
+            return { minX, maxX, minY, maxY };
+        }
 
-            node.append("text").attr("class", "node-breed").attr("x", 10).attr("y", 54)
-                .text(d => d.data.breed || "");
+        function generatePdfAll() {
+            const printBtn = document.querySelector('.print-btn');
+            const originalText = printBtn.innerText;
+            
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const sortMode = document.getElementById('sortSelect').value;
 
-            svg.call(zoom.transform, d3.zoomIdentity.translate(100, 300).scale(0.8));
+            // Формируем список для печати с учетом поиска и сортировки
+            let printDB = queensDatabase.filter(d => {
+                const q = d.queen || {};
+                return `${q.line} ${q.markNumber} ${q.breederAbbr}`.toLowerCase().includes(query);
+            });
+
+            if (sortMode === 'yearAsc') {
+                printDB.sort((a, b) => new Date(a.queen.birthday) - new Date(b.queen.birthday));
+            } else if (sortMode === 'yearDesc') {
+                printDB.sort((a, b) => new Date(b.queen.birthday) - new Date(a.queen.birthday));
+            }
+
+            if (printDB.length === 0) {
+                alert("Нет данных для печати. Измените параметры поиска.");
+                return;
+            }
+
+            printBtn.innerText = `⏳ Подготовка ${printDB.length} стр...`;
+            
+            const printArea = document.getElementById('print-area');
+            printArea.innerHTML = '';
+
+            printDB.forEach((data) => {
+                const q = data.queen;
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'print-page';
+                
+                const header = document.createElement('div');
+                header.className = 'print-header';
+                let year = new Date(q.birthday).getFullYear();
+                let mark = q.markNumber ? ` | Метка: ${q.markNumber}` : '';
+                header.innerText = `Линия: ${q.line || '—'} (${q.breederAbbr || '—'})${mark} | Год: ${year || '—'}`;
+                pageDiv.appendChild(header);
+
+                const svgElem = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svgElem.style.width = '100%';
+                svgElem.style.height = '92%';
+                
+                const gElem = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                svgElem.appendChild(gElem);
+                pageDiv.appendChild(svgElem);
+                printArea.appendChild(pageDiv);
+
+                const bounds = drawTree(data.pedigreeTree, d3.select(gElem), [30, 145]);
+
+                const paddingY = 50;
+                const treeHeight = (bounds.maxX - bounds.minX) + paddingY * 2;
+                const fixedWidth = 800; 
+                const viewHeight = Math.max(1100, treeHeight);
+
+                svgElem.setAttribute('viewBox', `0 0 ${fixedWidth} ${viewHeight}`);
+
+                const offsetY = Math.abs(bounds.minX) + paddingY;
+                gElem.setAttribute('transform', `translate(10, ${offsetY})`);
+            });
+
+            // Динамический таймаут в зависимости от количества маток
+            const delay = Math.max(1000, printDB.length * 10);
+
+            setTimeout(() => {
+                window.print();
+                printBtn.innerText = originalText;
+                printArea.innerHTML = ''; 
+            }, delay);
         }
 
         window.onload = filterQueens;
