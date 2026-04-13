@@ -26,7 +26,7 @@
             overflow: hidden;
         }
 
-        /* --- Стили интерфейса --- */
+        /* --- Интерфейс --- */
         .sidebar {
             width: 350px;
             background: var(--sidebar-bg);
@@ -37,117 +37,70 @@
             z-index: 100;
         }
 
-        .sidebar-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .sidebar-header h1 {
-            font-size: 20px;
-            margin: 0 0 15px 0;
-            color: #000;
-            letter-spacing: -0.5px;
-        }
-
-        .controls-row {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        #searchInput, #sortSelect {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-            outline: none;
-        }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border-color); }
+        .sidebar-header h1 { font-size: 20px; margin: 0 0 15px 0; color: #000; letter-spacing: -0.5px; }
+        .controls-row { display: flex; flex-direction: column; gap: 10px; }
+        #searchInput, #sortSelect { width: 100%; padding: 10px 14px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; outline: none; }
 
         .print-btn {
-            background-color: #10b981;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background-color: #10b981; color: white; border: none; padding: 12px;
+            border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer;
+            transition: background 0.2s; display: flex; align-items: center; justify-content: center;
         }
-
         .print-btn:hover { background-color: #059669; }
 
-        .results-list {
-            flex: 1;
-            overflow-y: auto;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-
-        .queen-item {
-            padding: 15px 20px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-        }
-
+        .results-list { flex: 1; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+        .queen-item { padding: 15px 20px; border-bottom: 1px solid #eee; cursor: pointer; }
         .queen-item:hover { background-color: #f9f9f9; }
         .queen-item.active { background-color: #e6f0ff; border-left: 4px solid var(--accent-blue); }
         .queen-line { font-weight: 600; font-size: 14px; }
         .queen-meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
-        .viewport {
-            flex: 1;
-            position: relative;
-            background-color: #ffffff;
-        }
-
+        .viewport { flex: 1; position: relative; background-color: #ffffff; }
         #tree-canvas { width: 100%; height: 100%; cursor: grab; }
 
-        /* Стили дерева (Экран) */
-        .node-text { font-size: 15px; font-weight: 600; fill: #111; font-family: 'Segoe UI', sans-serif; }
-        .insemination-text { font-size: 13px; fill: #d93025; font-family: 'Segoe UI', sans-serif; }
+        .node-text { font-size: 15px; font-weight: 600; fill: #111; }
+        .insemination-text { font-size: 13px; fill: #d93025; }
         .link { fill: none; stroke: #888; stroke-width: 1.5px; }
 
-        /* --- Стили для печати (Книжная) --- */
-        #print-area { display: none; }
+        /* --- Всплывающее окно --- */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.7); z-index: 9999;
+            align-items: center; justify-content: center; backdrop-filter: blur(2px);
+        }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; max-width: 450px; text-align: center; }
+        .modal-content .highlight { background: #f1f5f9; padding: 10px; border-radius: 6px; border-left: 4px solid #10b981; margin: 20px 0; text-align: left; }
+        .modal-btn { background: var(--accent-blue); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
 
+        /* --- ПЕЧАТЬ --- */
+        #print-area { display: none; }
         @media print {
             body { height: auto; overflow: visible; display: block; background: white; }
-            .sidebar, .viewport { display: none !important; }
+            .sidebar, .viewport, .modal-overlay { display: none !important; }
             #print-area { display: block !important; }
-            
-            /* Книжная ориентация с минимальными полями */
-            @page { size: A4 portrait; margin: 10mm; }
-
-            .print-page {
-                page-break-after: always;
-                page-break-inside: avoid;
-                width: 100%;
-                height: 275mm;
-                position: relative;
-            }
-
-            .print-header {
-                border-bottom: 2px solid #000;
-                padding-bottom: 8px;
-                margin-bottom: 10px;
-                font-size: 18px;
-                font-weight: bold;
-                font-family: 'Segoe UI', sans-serif;
-            }
-
-            /* Крупные шрифты для PDF */
-            .node-text { font-size: 14px !important; font-weight: 700 !important; }
-            .insemination-text { font-size: 12px !important; fill: #000 !important; } 
+            @page { size: A4 portrait; margin: 8mm; } /* Уменьшил поля */
+            .print-page { page-break-after: always; width: 100%; height: 280mm; position: relative; }
+            .print-header { border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 10px; font-size: 16px; font-weight: bold; }
+            .node-text { font-size: 13px !important; font-weight: 700 !important; }
+            .insemination-text { font-size: 11px !important; fill: #000 !important; }
         }
     </style>
 </head>
 <body>
+
+    <div class="modal-overlay" id="pdfModal">
+        <div class="modal-content">
+            <h3>Сохранение PDF</h3>
+            <div class="highlight">
+                <p>1. В окне печати выберите <b>«Сохранить как PDF»</b>.<br>
+                   2. Убедитесь, что ориентация <b>Книжная</b>.<br>
+                   3. Нажмите <b>Сохранить</b>.</p>
+            </div>
+            <button class="modal-btn" onclick="startPdfGeneration()">Создать PDF</button>
+            <button onclick="closeModal()" style="background:none; border:none; color:#64748b; margin-top:15px; cursor:pointer; text-decoration:underline;">Отмена</button>
+        </div>
+    </div>
 
     <div class="sidebar">
         <div class="sidebar-header">
@@ -159,16 +112,13 @@
                     <option value="yearDesc">Новые сверху (Год ↓)</option>
                     <option value="yearAsc">Старые сверху (Год ↑)</option>
                 </select>
-                <button class="print-btn" onclick="generatePdfAll()">🖨️ Распечатать список</button>
+                <button class="print-btn" onclick="openModal()">📄 Скачать PDF</button>
             </div>
         </div>
         <ul class="results-list" id="resultsList"></ul>
     </div>
 
-    <div class="viewport">
-        <svg id="tree-canvas"></svg>
-    </div>
-
+    <div class="viewport"><svg id="tree-canvas"></svg></div>
     <div id="print-area"></div>
 
     <script src="database.js"></script>
@@ -176,12 +126,11 @@
     <script>
         const svg = d3.select("#tree-canvas");
         const g = svg.append("g");
-
-        const zoom = d3.zoom()
-            .scaleExtent([0.1, 4])
-            .on("zoom", (event) => g.attr("transform", event.transform));
-        
+        const zoom = d3.zoom().scaleExtent([0.1, 4]).on("zoom", (e) => g.attr("transform", e.transform));
         svg.call(zoom);
+
+        function openModal() { document.getElementById('pdfModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('pdfModal').style.display = 'none'; }
 
         function filterQueens() {
             const query = document.getElementById('searchInput').value.toLowerCase();
@@ -194,28 +143,20 @@
                 return `${q.line} ${q.markNumber} ${q.breederAbbr}`.toLowerCase().includes(query);
             });
 
-            if (sortMode === 'yearAsc') {
-                filtered.sort((a, b) => new Date(a.queen.birthday) - new Date(b.queen.birthday));
-            } else if (sortMode === 'yearDesc') {
-                filtered.sort((a, b) => new Date(b.queen.birthday) - new Date(a.queen.birthday));
-            }
+            if (sortMode === 'yearAsc') filtered.sort((a, b) => new Date(a.queen.birthday) - new Date(b.queen.birthday));
+            else if (sortMode === 'yearDesc') filtered.sort((a, b) => new Date(b.queen.birthday) - new Date(a.queen.birthday));
 
             filtered.forEach(data => {
                 const q = data.queen || {};
                 const li = document.createElement('li');
                 li.className = 'queen-item';
-                li.innerHTML = `
-                    <div class="queen-line">${q.line} (${q.breederAbbr})</div>
-                    <div class="queen-meta">${q.breedName} • Метка: ${q.markNumber || '—'} • ${new Date(q.birthday).getFullYear()}</div>
-                `;
+                li.innerHTML = `<div class="queen-line">${q.line} (${q.breederAbbr})</div>
+                                <div class="queen-meta">${q.breedName} • ${new Date(q.birthday).getFullYear()}</div>`;
                 li.onclick = () => {
                     document.querySelectorAll('.queen-item').forEach(el => el.classList.remove('active'));
                     li.classList.add('active');
-                    
-                    drawTree(data.pedigreeTree, g, [50, 240]);
-                    
-                    const parent = svg.node().getBoundingClientRect();
-                    svg.call(zoom.transform, d3.zoomIdentity.translate(80, parent.height / 2).scale(0.85));
+                    drawTree(data.pedigreeTree, g, [50, 220]);
+                    svg.call(zoom.transform, d3.zoomIdentity.translate(40, 300).scale(0.8));
                 };
                 list.appendChild(li);
             });
@@ -223,137 +164,84 @@
 
         function drawTree(rootData, svgGroup, nodeSizes) {
             svgGroup.selectAll("*").remove();
-
             const hierarchy = d3.hierarchy(rootData, d => {
-                const children = [];
-                if (d.mother) children.push(d.mother);
-                if (d.dronesMother) children.push(d.dronesMother);
-                return children;
+                const c = [];
+                if (d.mother) c.push(d.mother);
+                if (d.dronesMother) c.push(d.dronesMother);
+                return c;
             });
-
             const treeLayout = d3.tree().nodeSize(nodeSizes);
             treeLayout(hierarchy);
 
-            let minX = Infinity, maxX = -Infinity;
-            let minY = Infinity, maxY = -Infinity;
-
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
             hierarchy.descendants().forEach(d => {
-                if (d.x < minX) minX = d.x;
-                if (d.x > maxX) maxX = d.x;
-                if (d.y < minY) minY = d.y;
-                if (d.y > maxY) maxY = d.y;
+                minX = Math.min(minX, d.x); maxX = Math.max(maxX, d.x);
+                minY = Math.min(minY, d.y); maxY = Math.max(maxY, d.y);
             });
 
-            svgGroup.selectAll(".link")
-                .data(hierarchy.links())
-                .enter()
-                .append("path")
-                .attr("class", "link")
+            svgGroup.selectAll(".link").data(hierarchy.links()).enter().append("path").attr("class", "link")
                 .attr("d", d => {
-                    const turnX = d.source.y + (nodeSizes[1] * 0.85); 
+                    const turnX = d.source.y + (nodeSizes[1] * 0.88); 
                     return `M ${d.source.y},${d.source.x} H ${turnX} V ${d.target.x} H ${d.target.y}`;
                 });
 
-            const node = svgGroup.selectAll(".node")
-                .data(hierarchy.descendants())
-                .enter()
-                .append("g")
-                .attr("class", "node")
-                .attr("transform", d => `translate(${d.y},${d.x})`);
+            const node = svgGroup.selectAll(".node").data(hierarchy.descendants()).enter().append("g")
+                .attr("class", "node").attr("transform", d => `translate(${d.y},${d.x})`);
 
-            node.append("text")
-                .attr("class", "node-text")
-                .attr("dy", "-0.25em")
-                .attr("x", 4)
+            node.append("text").attr("class", "node-text").attr("dy", "-0.25em").attr("x", 5)
                 .text(d => {
-                    if (d.data.id === "00000000-0000-0000-0000-000000000000" || !d.data.line || d.data.line === "Невідомо") return "Невідомо";
-                    let yearStr = d.data.year ? `.${d.data.year}` : "";
-                    let breederStr = (d.data.breederAbbr || d.data.breader) ? ` (${d.data.breederAbbr || d.data.breader})` : "";
-                    return `${d.data.line}${yearStr}${breederStr}`;
+                    if (!d.data.line || d.data.line === "Невідомо") return "Невідомо";
+                    return `${d.data.line}${d.data.year ? '.'+d.data.year : ''} (${d.data.breederAbbr || d.data.breader || ''})`;
                 });
 
-            node.append("text")
-                .attr("class", "insemination-text")
-                .attr("dy", "1.1em")
-                .attr("x", 4) 
-                .text(d => ((d.data.mother || d.data.dronesMother) && d.data.inseminationText) ? d.data.inseminationText : "");
+            node.append("text").attr("class", "insemination-text").attr("dy", "1.1em").attr("x", 5)
+                .text(d => (d.data.mother || d.data.dronesMother) ? d.data.inseminationText : "");
 
             return { minX, maxX, minY, maxY };
         }
 
-        function generatePdfAll() {
-            const printBtn = document.querySelector('.print-btn');
-            const originalText = printBtn.innerText;
-            
+        function startPdfGeneration() {
+            closeModal();
             const query = document.getElementById('searchInput').value.toLowerCase();
             const sortMode = document.getElementById('sortSelect').value;
-
-            // Формируем список для печати с учетом поиска и сортировки
-            let printDB = queensDatabase.filter(d => {
-                const q = d.queen || {};
-                return `${q.line} ${q.markNumber} ${q.breederAbbr}`.toLowerCase().includes(query);
-            });
-
-            if (sortMode === 'yearAsc') {
-                printDB.sort((a, b) => new Date(a.queen.birthday) - new Date(b.queen.birthday));
-            } else if (sortMode === 'yearDesc') {
-                printDB.sort((a, b) => new Date(b.queen.birthday) - new Date(a.queen.birthday));
-            }
-
-            if (printDB.length === 0) {
-                alert("Нет данных для печати. Измените параметры поиска.");
-                return;
-            }
-
-            printBtn.innerText = `⏳ Подготовка ${printDB.length} стр...`;
+            let printDB = queensDatabase.filter(d => `${d.queen.line} ${d.queen.breederAbbr}`.toLowerCase().includes(query));
             
+            if (sortMode === 'yearAsc') printDB.sort((a, b) => new Date(a.queen.birthday) - new Date(b.queen.birthday));
+            else if (sortMode === 'yearDesc') printDB.sort((a, b) => new Date(b.queen.birthday) - new Date(a.queen.birthday));
+
             const printArea = document.getElementById('print-area');
             printArea.innerHTML = '';
 
             printDB.forEach((data) => {
-                const q = data.queen;
                 const pageDiv = document.createElement('div');
                 pageDiv.className = 'print-page';
+                const year = new Date(data.queen.birthday).getFullYear();
+                pageDiv.innerHTML = `<div class="print-header">Линия: ${data.queen.line} (${data.queen.breederAbbr}) | ${year}</div>`;
                 
-                const header = document.createElement('div');
-                header.className = 'print-header';
-                let year = new Date(q.birthday).getFullYear();
-                let mark = q.markNumber ? ` | Метка: ${q.markNumber}` : '';
-                header.innerText = `Линия: ${q.line || '—'} (${q.breederAbbr || '—'})${mark} | Год: ${year || '—'}`;
-                pageDiv.appendChild(header);
-
                 const svgElem = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svgElem.style.width = '100%';
-                svgElem.style.height = '92%';
-                
+                svgElem.style.width = '100%'; svgElem.style.height = '94%';
                 const gElem = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 svgElem.appendChild(gElem);
                 pageDiv.appendChild(svgElem);
                 printArea.appendChild(pageDiv);
 
-                const bounds = drawTree(data.pedigreeTree, d3.select(gElem), [30, 145]);
+                // Плотная отрисовка для PDF
+                const bounds = drawTree(data.pedigreeTree, d3.select(gElem), [32, 140]);
 
-                const paddingY = 50;
-                const treeHeight = (bounds.maxX - bounds.minX) + paddingY * 2;
-                const fixedWidth = 800; 
-                const viewHeight = Math.max(1100, treeHeight);
+                const treeHeight = (bounds.maxX - bounds.minX) + 100;
+                const treeWidth = (bounds.maxY - bounds.minY) + 250; // +250 запас под текст справа
+                
+                // Динамический viewBox: сжимаем, если дерево шире или выше стандарта
+                const viewW = Math.max(850, treeWidth);
+                const viewH = Math.max(1150, treeHeight);
+                svgElem.setAttribute('viewBox', `0 0 ${viewW} ${viewH}`);
 
-                svgElem.setAttribute('viewBox', `0 0 ${fixedWidth} ${viewHeight}`);
-
-                const offsetY = Math.abs(bounds.minX) + paddingY;
-                gElem.setAttribute('transform', `translate(10, ${offsetY})`);
+                const offsetY = Math.abs(bounds.minX) + 50;
+                gElem.setAttribute('transform', `translate(5, ${offsetY})`); // Сдвиг вплотную влево (5px)
             });
 
-            // Динамический таймаут в зависимости от количества маток
-            const delay = Math.max(1000, printDB.length * 10);
-
-            setTimeout(() => {
-                window.print();
-                printBtn.innerText = originalText;
-                printArea.innerHTML = ''; 
-            }, delay);
+            setTimeout(() => { window.print(); printArea.innerHTML = ''; }, 1000);
         }
-
         window.onload = filterQueens;
     </script>
 </body>
