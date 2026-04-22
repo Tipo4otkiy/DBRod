@@ -92,6 +92,14 @@
     <div class="modal-overlay" id="pdfModal">
         <div class="modal-content">
             <h3>Сохранение PDF</h3>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; align-items: center;">
+                <label style="font-size: 14px; font-weight: bold;">Год:</label>
+                <input type="number" id="pdfYearFrom" placeholder="С (напр. 2021)" style="padding: 8px; width: 125px; border: 1px solid #ccc; border-radius: 4px; outline: none;">
+                <span>-</span>
+                <input type="number" id="pdfYearTo" placeholder="По (напр. 2024)" style="padding: 8px; width: 125px; border: 1px solid #ccc; border-radius: 4px; outline: none;">
+            </div>
+
             <div class="highlight">
                 <p>1. В окне печати выберите <b>«Сохранить как PDF»</b>.<br>
                    2. Убедитесь, что ориентация <b>Книжная</b>.<br>
@@ -201,11 +209,36 @@
         }
 
         function startPdfGeneration() {
+            // Считываем значения из новых инпутов годов
+            const yearFromInput = document.getElementById('pdfYearFrom').value;
+            const yearToInput = document.getElementById('pdfYearTo').value;
+            // Если поле пустое, берем крайние значения
+            const yearFrom = yearFromInput ? parseInt(yearFromInput) : 0;
+            const yearTo = yearToInput ? parseInt(yearToInput) : 9999;
+
             closeModal();
             const query = document.getElementById('searchInput').value.toLowerCase();
             const sortMode = document.getElementById('sortSelect').value;
-            let printDB = queensDatabase.filter(d => `${d.queen.line} ${d.queen.breederAbbr}`.toLowerCase().includes(query));
             
+            // Фильтруем базу по поиску и по выбранному диапазону годов
+            let printDB = queensDatabase.filter(d => {
+                const q = d.queen || {};
+                let year = 0;
+                if (q.birthday) {
+                    year = new Date(q.birthday).getFullYear();
+                }
+                
+                const matchSearch = `${q.line} ${q.breederAbbr}`.toLowerCase().includes(query);
+                const matchYear = year >= yearFrom && year <= yearTo;
+                
+                return matchSearch && matchYear;
+            });
+            
+            if (printDB.length === 0) {
+                alert("Нет данных для сохранения в PDF в выбранном диапазоне годов.");
+                return;
+            }
+
             if (sortMode === 'yearAsc') printDB.sort((a, b) => new Date(a.queen.birthday) - new Date(b.queen.birthday));
             else if (sortMode === 'yearDesc') printDB.sort((a, b) => new Date(b.queen.birthday) - new Date(a.queen.birthday));
 
